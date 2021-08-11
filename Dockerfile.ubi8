@@ -43,11 +43,9 @@ USER 0
 RUN chmod +x /usr/bin/operator-sdk && \
     chmod +rw /etc/passwd && \
     chmod +x /usr/bin/kubectl && \
-    chmod +x /usr/local/bin/ep
+    chmod +x /usr/local/bin/ep && \
+    chmod -R 777 /opt/app-root/src
 
 USER 1001
 
 ENTRYPOINT [ "/usr/local/bin/ep" ]
-
-# Set the default CMD to print the usage of the language image.
-CMD $STI_SCRIPTS_PATH/usage
