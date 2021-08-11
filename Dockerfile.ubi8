@@ -1,0 +1,48 @@
+FROM registry.access.redhat.com/ubi8/s2i-base:1-262
+
+ENV NAME=golang \
+    GO_MAJOR_VERSION=1 \
+    GO_MINOR_VERSION=16 \
+    GO_PATCH_VERSION=6 \
+    CONTAINER_NAME="rhel8/go-toolset"
+
+# Define the VERSION environment variable in a separate step, so we can
+# re-use the GO_MAJOR_VERSION, GO_MINOR_VERSION and GO_PATCH_VERSION variables. 
+ENV VERSION=$GO_MAJOR_VERSION.$GO_MINOR_VERSION.$GO_PATCH_VERSION \
+    SUMMARY="Platform for building and running Go Applications" \
+    DESCRIPTION="Go Toolset available as a container is a base platform for \
+    building and running various Go applications and frameworks. \
+    Go is an easy to learn, powerful, statically typed language in the C/C++ \
+    tradition with garbage collection, concurrent programming support, and memory safety features."
+
+LABEL summary="$SUMMARY" \
+    description="$DESCRIPTION" \
+    io.k8s.description="$DESCRIPTION" \
+    io.k8s.display-name="Go $VERSION" \
+    io.openshift.tags="builder,golang,golang${GO_MAJOR_VERSION}${GO_MINOR_VERSION},rh-golang${GO_MAJOR_VERSION}${GO_MINOR_VERSION},go" \
+    com.redhat.component="go-toolset-container" \
+    com.redhat.license_terms="https://www.redhat.com/en/about/red-hat-end-user-license-agreements#UBI" \
+    name="$CONTAINER_NAME" \
+    version="$VERSION"
+
+ADD https://dl.google.com/go/go1.16.6.linux-amd64.tar.gz  /tmp/go.tar.gz
+RUN tar -xzf /tmp/go.tar.gz && \
+    mv go /usr/local && \
+    chmod +x /usr/local/go
+
+ENV PATH=/usr/local/go/bin:/opt/app-root/src/bin:/opt/app-root/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ENV GOROOT=/usr/local/go 
+
+ADD passwd /etc/passwd
+ADD https://github.com/operator-framework/operator-sdk/releases/download/v1.10.1/operator-sdk_linux_amd64 /usr/bin/operator-sdk
+ADD https://dl.k8s.io/release/v1.22.0/bin/linux/amd64/kubectl /usr/bin/kubectl
+
+USER 0
+
+RUN chmod +x /usr/bin/operator-sdk && \
+    chmod +x /usr/bin/kubectl
+
+USER 1001
+
+# Set the default CMD to print the usage of the language image.
+CMD $STI_SCRIPTS_PATH/usage
